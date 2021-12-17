@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <canvas id="canvas"></canvas>
+    </body>
+    <script src="../../../util.js"></script>
+    <script>
+		var util = new WebGLUtils();
+var canvas = document.getElementById('canvas');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+var gl = util.getGLContext(canvas);
+
+var triangleCoords = [0.0, -1.0, 0.0, 1.0, 1.0, -1.0];
+const red = [1.0, 0.0, 0.0 ];
+const green =[0.0, 1.0, 0.0];
+const blue = [0.0, 0.0, 1.0];
+//Step1 : Write shaders
+var vertexShader = `#version 300 es
+precision mediump float;
+in vec2 position;
+out vec2 colorPosition;
+void main () {
+    gl_Position = vec4(position, 0.0, 1.0);//x,y,z,w
+	colorPosition = position;
+}`;
+
+var fragmentShader = `#version 300 es
+precision mediump float;
+layout(location=0)
+out vec4 fragColor;
+in vec2 colorPosition;
+uniform vec3 u_colors[3];
+// Resolution is required here
+uniform vec2 u_resolution;
+void main(void)
+{
+    // Extract three colors separately for mixing
+    vec4 c1=vec4(u_colors[0], 1.0);
+    vec4 c2=vec4(u_colors[1], 1.0);
+    vec4 c3=vec4(u_colors[2], 1.0);
+    //Get the screen position
+    vec2 screenPos=gl_FragCoord.xy/u_resolution;
+    // Use of mix() function
+    vec4 color=mix(c1,c3,colorPosition.x);
+	// Mix the color with that of color of third vertex
+    color=mix(color,c2,screenPos.y);
+    // Send this color
+    fragColor=color;
+}
+`;
+//Step2 : Create Program from shaders
+var program = util.getProgram(gl, vertexShader, fragmentShader);
+//Step3 : Create Buffers
+var buffer = util.createAndBindBuffer(gl.ARRAY_BUFFER, gl.STATIC_DRAW, new Float32Array(triangleCoords));
+//Step4 : Link GPU variable to CPU and sending data
+gl.useProgram(program);
+var position = util.linkGPUAndCPU({
+    program : program,
+    gpuVariable : 'position',
+    channel : gl.ARRAY_BUFFER,
+    buffer : buffer,
+    dims : 2,
+    dataType : gl.FLOAT,
+    normalize : gl.FALSE,
+    stride : 0,
+    offset : 0
+}, gl);
+//Step5 : Render Triangle
+
+const inputColor1 = gl.getUniformLocation(program, 'u_colors[0]');
+gl.uniform3fv(inputColor1, red);
+
+const inputColor2 = gl.getUniformLocation(program, 'u_colors[1]');
+gl.uniform3fv(inputColor2, green);
+
+const inputColor3 = gl.getUniformLocation(program, 'u_colors[2]');
+gl.uniform3fv(inputColor3, blue);
+
+const resolution = gl.getUniformLocation(program, 'u_resolution');
+gl.uniform2fv(resolution, [canvas.width, canvas.height]);
+
+gl.drawArrays(gl.TRIANGLES, 0, 3);
+</script>
+</html>
