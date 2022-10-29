@@ -83,7 +83,6 @@ var getCoords = () => {
 
 var texture, paletteTex;
 var AR = null;
-var frameBuffer1, frameBuffer2, activeFB;
 var image = new Image();
 var colorImage = new Image();
 image.src = '../4KSample.jpg';
@@ -107,11 +106,7 @@ colorImage.onload = () => {
         gl.bindTexture(gl.TEXTURE_2D, paletteTex);
         render();
     };
-};
-
-const setFBTex = () => {
-    gl.activeTexture(gl.TEXTURE0 + 0);
-    gl.bindTexture(gl.TEXTURE_2D, frameBuffer1.tex);
+    image.onerror = (err) => console.log(err);
 };
 
 gl.useProgram(program);
@@ -124,9 +119,6 @@ gl.uniform1f(flipY, -1);
 
 var render = (fb) => {
     //Step5
-    if (fb) {
-        activeFB = fb;
-    }
     gl.drawArrays(gl.TRIANGLES, 0, vertices.length/2);
 };
 
